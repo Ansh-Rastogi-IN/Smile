@@ -322,71 +322,73 @@ export default function CameraInterface() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
-      {/* Header */}
-      <header className="bg-gradient-to-b from-black/80 to-transparent absolute top-0 left-0 right-0 z-20 p-6">
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col">
+      {/* Minimalist Header */}
+      <header className="absolute top-0 left-0 right-0 z-20 p-8">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div>
-            <h1 className="text-xl font-bold text-white">📷 Smile Camera</h1>
-            <p className="text-white/70 text-sm mt-1">
-              {autoMode ? '🤖 Auto-capture enabled - Just smile!' : 'Manual capture mode'}
-            </p>
-          </div>
-          <div className="flex items-center gap-6">
-            {/* Auto Mode Toggle */}
-            <div className="text-right">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <span className="text-white/70 text-sm">Auto Mode</span>
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={autoMode}
-                    onChange={(e) => {
-                      const newAutoMode = e.target.checked
-                      setAutoMode(newAutoMode)
-                      
-                      if (newAutoMode) {
-                        setMessage('👀 Looking for smiles... Smile to capture!')
-                      } else {
-                        setMessage('Ready! Click CAPTURE when you\'re smiling 😊')
-                      }
-                      
-                      // Detection stays running for UI feedback in both modes
-                      // Only auto-capture behavior changes
-                    }}
-                    className="sr-only"
-                  />
-                  <div className={`w-14 h-8 rounded-full transition ${autoMode ? 'bg-green-600' : 'bg-gray-600'}`}>
-                    <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition ${autoMode ? 'translate-x-7' : 'translate-x-1'} mt-1`}></div>
-                  </div>
-                </div>
-              </label>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <span className="text-white text-xl">📷</span>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white">{totalSmiles}</div>
-              <div className="text-white/70 text-sm">Total Smiles</div>
+            <div>
+              <h1 className="text-lg font-semibold text-white tracking-tight">Smile Camera</h1>
+              <p className="text-white/40 text-xs">
+                {autoMode ? 'Auto-detect mode' : 'Manual mode'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-8">
+            {/* Auto Mode Toggle */}
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <span className="text-white/50 text-sm font-medium group-hover:text-white/70 transition">Auto</span>
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={autoMode}
+                  onChange={(e) => {
+                    const newAutoMode = e.target.checked
+                    setAutoMode(newAutoMode)
+                    
+                    if (newAutoMode) {
+                      setMessage('👀 Looking for smiles... Smile to capture!')
+                    } else {
+                      setMessage('Ready! Click CAPTURE when you\'re smiling 😊')
+                    }
+                  }}
+                  className="sr-only"
+                />
+                <div className={`w-12 h-6 rounded-full transition-all duration-300 ${autoMode ? 'bg-blue-500' : 'bg-white/20'}`}>
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-lg transform transition-all duration-300 ${autoMode ? 'translate-x-7' : 'translate-x-1'} mt-1`}></div>
+                </div>
+              </div>
+            </label>
+            
+            {/* Counter */}
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+              <div className="text-xl font-bold text-white">{totalSmiles}</div>
+              <div className="text-white/40 text-xs">captures</div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Camera View */}
-      <div className="flex-1 relative flex items-center justify-center">
-        {/* Video Feed */}
-        <div className="relative w-full h-full flex items-center justify-center bg-black">
+      <div className="flex-1 relative flex items-center justify-center p-8">
+        {/* Video Container */}
+        <div className="relative w-full max-w-5xl aspect-video rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-black">
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            className="max-w-full max-h-full object-contain"
+            className="w-full h-full object-cover"
             style={{ transform: 'scaleX(-1)' }}
           />
           
           {/* Countdown Overlay */}
           {countdown > 0 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div className="text-white text-[200px] font-bold animate-pulse">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-xl">
+              <div className="text-white text-[120px] font-light tracking-wider animate-pulse">
                 {countdown}
               </div>
             </div>
@@ -394,87 +396,82 @@ export default function CameraInterface() {
 
           {/* Preview Overlay */}
           {showPreview && previewImage && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in">
-              <div className="text-center">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/95 backdrop-blur-xl">
+              <div className="text-center space-y-4">
                 <img 
                   src={previewImage} 
                   alt="Preview" 
-                  className="max-w-[80vw] max-h-[70vh] rounded-2xl shadow-2xl mb-4"
+                  className="max-w-[90%] max-h-[75vh] rounded-2xl shadow-2xl mx-auto"
                 />
-                <div className="text-white text-xl font-semibold">
-                  ✨ Great smile! Uploading...
+                <div className="text-white/80 text-base font-light">
+                  Perfect capture! Uploading...
                 </div>
               </div>
             </div>
           )}
 
-          {/* Guide Frame */}
+          {/* Minimal Guide */}
           {isActive && !countdown && !showPreview && (
             <>
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="w-[600px] h-[600px] border-4 border-white/30 rounded-full"></div>
+                <div className="w-64 h-64 border-2 border-white/20 rounded-full"></div>
               </div>
               
-              {/* Smile Score Indicator */}
+              {/* Clean Smile Score Indicator */}
               {autoMode && (
-                <div className="absolute top-24 left-1/2 transform -translate-x-1/2 z-30">
-                  <div className="bg-black/80 backdrop-blur-md px-4 py-2 rounded-xl border-2 border-white/30 shadow-2xl">
-                    <div className="text-white text-center">
-                      <div className="text-sm font-semibold opacity-80 mb-2">🎯 Smile Quality</div>
-                      
-                      {/* Current Smile Bar */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-xs opacity-60 w-12">Now</span>
-                        <div className="w-48 h-4 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
+                <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-30">
+                  <div className="bg-black/60 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10">
+                    <div className="text-white space-y-3">
+                      {/* Current Score */}
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-white/40 w-8">Now</span>
+                        <div className="w-44 h-2 bg-white/10 rounded-full overflow-hidden">
                           <div 
                             className={`h-full transition-all duration-200 ${
-                              smileScore >= 0.85 ? 'bg-gradient-to-r from-green-400 to-green-500' : 
-                              smileScore >= 0.75 ? 'bg-gradient-to-r from-yellow-400 to-green-400' : 
-                              smileScore >= 0.60 ? 'bg-gradient-to-r from-blue-400 to-yellow-400' : 
-                              'bg-blue-500'
+                              smileScore >= 0.75 ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 
+                              smileScore >= 0.60 ? 'bg-gradient-to-r from-blue-400 to-cyan-500' : 
+                              'bg-blue-500/50'
                             }`}
                             style={{ width: `${smileScore * 100}%` }}
                           ></div>
                         </div>
-                        <span className="text-base font-bold w-14">{Math.round(smileScore * 100)}%</span>
+                        <span className="text-sm font-medium w-12 text-right">{Math.round(smileScore * 100)}%</span>
                       </div>
                       
-                      {/* Best Smile Indicator */}
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs opacity-60 w-12">Best</span>
-                        <div className="w-48 h-2 bg-gray-800 rounded-full overflow-hidden">
+                      {/* Best Score */}
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-white/40 w-8">Best</span>
+                        <div className="w-44 h-1.5 bg-white/10 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+                            className="h-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-500"
                             style={{ width: `${bestSmileScore * 100}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm font-semibold w-14 text-purple-300">{Math.round(bestSmileScore * 100)}%</span>
+                        <span className="text-xs font-light w-12 text-right text-purple-300">{Math.round(bestSmileScore * 100)}%</span>
                       </div>
                       
-                      {/* Status Messages */}
-                      {smileStreak >= 3 && (
-                        <div className="text-green-400 text-sm mt-3 font-semibold animate-pulse">
-                          🔥 Perfect! Hold it... ({smileStreak})
-                        </div>
-                      )}
-                      {smileScore >= 0.75 && smileStreak < 3 && (
-                        <div className="text-yellow-300 text-sm mt-3">
-                          😊 Great smile! Keep it steady...
-                        </div>
-                      )}
-                      {smileScore < 0.75 && smileScore >= 0.50 && (
-                        <div className="text-blue-300 text-sm mt-3">
-                          🙂 Getting there... smile bigger!
-                        </div>
-                      )}
-                      {smileScore < 0.50 && (
-                        <div className="text-gray-400 text-sm mt-3">
-                          😐 Show me that smile!
-                        </div>
-                      )}
-                      
-                      <div className="text-xs opacity-40 mt-3 border-t border-gray-700 pt-2">
-                        AI: {isDetecting ? '✅' : '⏳'} | Cooldown: 5s | Quality: {smileStreak >= 3 ? 'Excellent' : 'Tracking'}
+                      {/* Status */}
+                      <div className="pt-2 border-t border-white/10">
+                        {smileStreak >= 2 && (
+                          <div className="text-green-400 text-xs font-medium">
+                            Hold that smile... ({smileStreak})
+                          </div>
+                        )}
+                        {smileScore >= 0.65 && smileStreak < 2 && (
+                          <div className="text-cyan-300 text-xs">
+                            Keep smiling...
+                          </div>
+                        )}
+                        {smileScore < 0.65 && smileScore >= 0.40 && (
+                          <div className="text-blue-300 text-xs">
+                            Smile a bit more
+                          </div>
+                        )}
+                        {smileScore < 0.40 && (
+                          <div className="text-white/30 text-xs">
+                            Waiting for smile...
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -487,97 +484,64 @@ export default function CameraInterface() {
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
-      {/* Footer Controls */}
-      <footer className="bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 left-0 right-0 z-20 p-6">
-        <div className="max-w-7xl mx-auto">
+      {/* Minimalist Footer Controls */}
+      <footer className="absolute bottom-0 left-0 right-0 z-20 p-8">
+        <div className="max-w-7xl mx-auto space-y-4">
           {/* Status Message */}
           {message && (
-            <div className="text-center mb-4">
-              <div className="inline-block px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm">
+            <div className="text-center">
+              <div className="inline-block px-4 py-2 bg-white/5 backdrop-blur-sm rounded-full text-white/70 text-xs font-light border border-white/10">
                 {message}
               </div>
             </div>
           )}
 
           {/* Control Buttons */}
-          <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-4">
             {!isActive ? (
               <button
                 onClick={startCamera}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95"
+                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm font-medium rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
               >
-                🎥 Start Camera
+                Start Camera
               </button>
             ) : (
               <>
-                {autoMode && (
-                  <div className="px-4 py-2 bg-green-600/20 border-2 border-green-500 text-green-300 text-sm font-semibold rounded-lg">
-                    🤖 Auto Mode Active - Just smile and I'll capture!
-                  </div>
-                )}
-                
                 <button
                   onClick={capturePhoto}
                   disabled={countdown > 0 || showPreview}
-                  className="px-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-xl font-bold rounded-xl shadow-2xl transition transform hover:scale-105 active:scale-95"
+                  className="px-10 py-3 bg-white hover:bg-white/90 disabled:bg-white/20 disabled:cursor-not-allowed text-slate-900 disabled:text-white/30 text-sm font-semibold rounded-full shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
                 >
-                  📸 CAPTURE
+                  Capture
                 </button>
                 
                 <button
                   onClick={stopCamera}
-                  className="px-4 py-3 bg-red-600/80 hover:bg-red-700 text-white text-base font-semibold rounded-lg transition"
+                  className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-medium rounded-full border border-white/10 transition-all duration-200"
                 >
                   Stop
                 </button>
               </>
             )}
-
-            <a
-              href="/wall"
-              className="px-4 py-3 bg-purple-600/80 hover:bg-purple-700 text-white text-base font-semibold rounded-lg transition"
-            >
-              View Wall
-            </a>
-
-            <a
-              href="/"
-              className="px-4 py-3 bg-gray-700/80 hover:bg-gray-600 text-white text-base font-semibold rounded-lg transition"
-            >
-              Home
-            </a>
           </div>
 
-          {/* Instructions */}
-          <div className="text-center mt-6 text-white/60 text-sm space-y-1">
-            {autoMode ? (
-              <>
-                <p>🎯 <strong>Smart Capture</strong>: AI waits for your best smile</p>
-                <p>😊 Smile naturally and hold it - camera captures at peak quality</p>
-                <p>⏱️ 5-second cooldown ensures no duplicate shots</p>
-                <p>🔥 Keep smiling steadily for 3+ frames = instant capture!</p>
-              </>
-            ) : (
-              <>
-                <p>👉 Position your face in the center circle</p>
-                <p>😊 Give your best smile and click CAPTURE</p>
-                <p>⏱️ 3-second countdown before photo</p>
-              </>
-            )}
-          </div>
+          {/* Minimal Instructions */}
+          {isActive && (
+            <div className="text-center text-white/30 text-xs font-light">
+              {autoMode ? (
+                <p>AI-powered detection • Hold your smile for automatic capture</p>
+              ) : (
+                <p>Position yourself in the circle • Click capture when ready</p>
+              )}
+            </div>
+          )}
         </div>
       </footer>
 
       <style jsx>{`
         @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
         }
         .animate-fade-in {
           animation: fade-in 0.3s ease-out;

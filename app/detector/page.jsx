@@ -183,10 +183,10 @@ export default function SmileDetector() {
               Manual Test
             </a>
             <a 
-              href="/wall" 
+              href="/gallery" 
               className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg transition text-xs"
             >
-              View Wall
+              Gallery
             </a>
           </div>
         </div>

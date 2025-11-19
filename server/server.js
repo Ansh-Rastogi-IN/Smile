@@ -23,6 +23,18 @@ app.use(cors());
 app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
+// Add download endpoint for images
+app.get('/download/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filepath = path.join(imagesDir, filename);
+  
+  if (fs.existsSync(filepath)) {
+    res.download(filepath, filename);
+  } else {
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
 // Configure multer for photo uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -36,8 +48,60 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// File paths for persistent storage
+const galleryDataFile = path.join(__dirname, 'gallery-data.json');
+const camerasDataFile = path.join(__dirname, 'cameras-data.json');
+
+// Load gallery data from file
+function loadGalleryData() {
+  try {
+    if (fs.existsSync(galleryDataFile)) {
+      const data = JSON.parse(fs.readFileSync(galleryDataFile, 'utf8'));
+      return data.gallery || [];
+    }
+  } catch (error) {
+    console.error('Error loading gallery data:', error);
+  }
+  return [];
+}
+
+// Save gallery data to file
+function saveGalleryData() {
+  try {
+    fs.writeFileSync(galleryDataFile, JSON.stringify({ gallery }, null, 2));
+  } catch (error) {
+    console.error('Error saving gallery data:', error);
+  }
+}
+
+// Load cameras data from file
+function loadCamerasData() {
+  try {
+    if (fs.existsSync(camerasDataFile)) {
+      const data = JSON.parse(fs.readFileSync(camerasDataFile, 'utf8'));
+      return data.cameras || [];
+    }
+  } catch (error) {
+    console.error('Error loading cameras data:', error);
+  }
+  return [];
+}
+
+// Save cameras data to file
+function saveCamerasData() {
+  try {
+    fs.writeFileSync(camerasDataFile, JSON.stringify({ cameras }, null, 2));
+  } catch (error) {
+    console.error('Error saving cameras data:', error);
+  }
+}
+
 let totalCount = 0;
-let cameras = [];
+let cameras = loadCamerasData();
+let gallery = loadGalleryData();
+
+// Update totalCount based on gallery
+totalCount = gallery.length;
 
 // API endpoint to receive photos from camera software
 app.post('/upload', upload.single('photo'), (req, res) => {
@@ -47,26 +111,32 @@ app.post('/upload', upload.single('photo'), (req, res) => {
     
     totalCount++;
     const imageUrl = `http://localhost:3001/images/${req.file.filename}`;
+    const timestamp = Date.now();
+
+    // Add to gallery
+    const galleryItem = {
+      id: req.file.filename,
+      url: imageUrl,
+      filename: req.file.filename,
+      timestamp: timestamp,
+      camera: camera ? camera.name : 'Unknown',
+      cameraLocation: camera ? camera.location : null,
+      uploaded: false,
+      uploadedAt: null
+    };
+    gallery.unshift(galleryItem); // Add to beginning
+    saveGalleryData(); // Persist to disk
 
     console.log(`📸 New smile uploaded: ${req.file.filename} (Total: ${totalCount})`);
     if (camera) {
       console.log(`📍 From: ${camera.name} (${camera.location})`);
       camera.captureCount = (camera.captureCount || 0) + 1;
       camera.lastCapture = new Date().toISOString();
+      saveCamerasData(); // Persist camera updates
     }
-    console.log(`🔗 Broadcasting URL: ${imageUrl}`);
+    console.log(`🔗 Image stored in gallery`);
 
-    // Broadcast to all connected clients
-    const payload = {
-      event: 'new_smile',
-      image: imageUrl,
-      total_count: totalCount,
-      camera: camera ? { name: camera.name, location: camera.location } : null
-    };
-    console.log('📡 Payload:', JSON.stringify(payload));
-    io.emit('new_smile', payload);
-
-    res.json({ success: true, url: imageUrl, total: totalCount });
+    res.json({ success: true, url: imageUrl, total: totalCount, galleryId: galleryItem.id });
   } catch (error) {
     console.error('❌ Upload failed:', error);
     res.status(500).json({ success: false, message: 'Upload failed', error: error.message });
@@ -114,6 +184,70 @@ app.get('/recent-images', (req, res) => {
   }
 });
 
+// Gallery APIs
+app.get('/gallery', (req, res) => {
+  res.json({ images: gallery, total: gallery.length });
+});
+
+app.post('/gallery/delete', (req, res) => {
+  try {
+    const { imageIds } = req.body;
+    
+    let deletedCount = 0;
+    imageIds.forEach(imageId => {
+      // Remove from gallery
+      const index = gallery.findIndex(img => img.id === imageId);
+      if (index !== -1) {
+        const img = gallery[index];
+        // Delete file
+        try {
+          fs.unlinkSync(path.join(imagesDir, img.filename));
+          gallery.splice(index, 1);
+          deletedCount++;
+        } catch (err) {
+          console.error(`Failed to delete ${img.filename}:`, err);
+        }
+      }
+    });
+    
+    saveGalleryData(); // Persist deletion
+    console.log(`🗑️ Deleted ${deletedCount} images from gallery`);
+    res.json({ success: true, deleted: deletedCount });
+  } catch (error) {
+    console.error('❌ Delete failed:', error);
+    res.status(500).json({ success: false, message: 'Delete failed', error: error.message });
+  }
+});
+
+app.post('/gallery/upload-drive', async (req, res) => {
+  try {
+    const { imageIds } = req.body;
+    
+    // TODO: Implement Google Drive upload
+    // For now, just mark as uploaded
+    let uploadedCount = 0;
+    imageIds.forEach(imageId => {
+      const img = gallery.find(img => img.id === imageId);
+      if (img && !img.uploaded) {
+        img.uploaded = true;
+        img.uploadedAt = new Date().toISOString();
+        uploadedCount++;
+      }
+    });
+    
+    saveGalleryData(); // Persist upload status
+    console.log(`📤 Marked ${uploadedCount} images as uploaded to Drive`);
+    res.json({ 
+      success: true, 
+      uploaded: uploadedCount,
+      message: 'Images ready for Drive upload (integration pending)'
+    });
+  } catch (error) {
+    console.error('❌ Drive upload failed:', error);
+    res.status(500).json({ success: false, message: 'Upload failed', error: error.message });
+  }
+});
+
 // Camera Management APIs
 app.get('/cameras', (req, res) => {
   res.json({ cameras });
@@ -137,6 +271,7 @@ app.post('/cameras', (req, res) => {
   };
 
   cameras.push(newCamera);
+  saveCamerasData(); // Persist camera addition
   console.log(`📹 New camera added: ${name} (${location})`);
   
   res.json({ success: true, camera: newCamera });
@@ -151,6 +286,7 @@ app.delete('/cameras/:id', (req, res) => {
   }
 
   const deleted = cameras.splice(index, 1)[0];
+  saveCamerasData();
   console.log(`🗑️ Camera deleted: ${deleted.name}`);
   
   res.json({ success: true, message: 'Camera deleted' });
@@ -166,6 +302,7 @@ app.patch('/cameras/:id/toggle', (req, res) => {
   }
 
   camera.active = active;
+  saveCamerasData(); // Persist camera toggle
   console.log(`📹 Camera ${active ? 'enabled' : 'disabled'}: ${camera.name}`);
   
   res.json({ success: true, camera });

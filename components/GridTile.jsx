@@ -48,7 +48,7 @@ export default function GridTile({ src, index = 0, isLatest = false }) {
         className={clsx(
           'object-cover w-full h-full transition-all duration-500',
           isFading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-        )}
+        )}  
         draggable={false}
       />
       

@@ -16,9 +16,9 @@ export default function HomePage() {
 
   const features = [
     {
-      title: '🎬 Live Smile Wall',
-      description: 'Fullscreen display showing the latest smiles in real-time',
-      path: '/wall',
+      title: '📸 Gallery Dashboard',
+      description: 'View captured images and upload to Google Drive',
+      path: '/gallery',
       color: 'from-purple-600 to-blue-600',
       icon: '🖼️'
     },
@@ -80,7 +80,13 @@ export default function HomePage() {
             {features.map((feature, index) => (
               <button
                 key={feature.path}
-                onClick={() => router.push(feature.path)}
+                onClick={() => {
+                  if (feature.path === '/camera') {
+                    window.open(feature.path, '_blank')
+                  } else {
+                    router.push(feature.path)
+                  }
+                }}
                 className="group relative overflow-hidden bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-3 text-left hover:scale-[1.02] transition-all duration-300 hover:border-white/30 hover:shadow-xl"
                 style={{ animationDelay: `${index * 100}ms` }}
               >

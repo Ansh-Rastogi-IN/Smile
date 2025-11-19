@@ -103,8 +103,8 @@ export default function CamerasManagement() {
               <a href="/" className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg transition text-sm">
                 Home
               </a>
-              <a href="/wall" className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded-lg transition text-sm">
-                Wall
+              <a href="/gallery" className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded-lg transition text-sm">
+                Gallery
               </a>
             </div>
           </div>
