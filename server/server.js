@@ -308,6 +308,22 @@ app.patch('/cameras/:id/toggle', (req, res) => {
   res.json({ success: true, camera });
 });
 
+// Reset counter without deleting images
+app.post('/reset-counter', (req, res) => {
+  try {
+    totalCount = 0;
+    console.log('🔄 Smile counter reset to 0');
+    
+    // Notify all clients
+    io.emit('counter_reset', { total_count: 0 });
+    
+    res.json({ success: true, message: 'Counter reset to 0', total: totalCount });
+  } catch (error) {
+    console.error('❌ Counter reset failed:', error);
+    res.status(500).json({ success: false, message: 'Reset failed', error: error.message });
+  }
+});
+
 // Clear all images
 app.post('/clear-images', (req, res) => {
   try {

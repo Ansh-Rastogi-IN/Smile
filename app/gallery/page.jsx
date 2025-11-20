@@ -10,14 +10,19 @@ export default function Gallery() {
   const [sortBy, setSortBy] = useState('newest') // newest, oldest, camera
   const [driveLink, setDriveLink] = useState('https://drive.google.com/drive/folders/11Ox_qUZBi-XrbQdKPkD9YwM9CaXh9MRE')
   const [showDriveLinkInput, setShowDriveLinkInput] = useState(false)
+  const [totalSmiles, setTotalSmiles] = useState(0)
 
   useEffect(() => {
     fetchImages()
+    fetchTotalSmiles()
     // Load saved drive link
     const savedLink = localStorage.getItem('driveFolderLink')
     if (savedLink) setDriveLink(savedLink)
     // Refresh every 10 seconds
-    const interval = setInterval(fetchImages, 10000)
+    const interval = setInterval(() => {
+      fetchImages()
+      fetchTotalSmiles()
+    }, 10000)
     return () => clearInterval(interval)
   }, [])
 
@@ -79,6 +84,16 @@ export default function Gallery() {
     } catch (error) {
       console.error('Failed to fetch images:', error)
       setLoading(false)
+    }
+  }
+
+  async function fetchTotalSmiles() {
+    try {
+      const res = await fetch('http://localhost:3001/count')
+      const data = await res.json()
+      setTotalSmiles(data.total_count || 0)
+    } catch (error) {
+      console.error('Failed to fetch total smiles:', error)
     }
   }
 
@@ -149,6 +164,30 @@ export default function Gallery() {
     setUploading(false)
   }
 
+  async function resetCounter() {
+    if (!confirm('Are you sure you want to reset the smile counter to 0? This will not delete any images.')) {
+      return
+    }
+
+    try {
+      const res = await fetch('http://localhost:3001/reset-counter', {
+        method: 'POST'
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        alert('✅ Counter reset to 0 successfully!')
+        await fetchImages()
+        await fetchTotalSmiles()
+      } else {
+        alert(`Reset failed: ${data.message}`)
+      }
+    } catch (error) {
+      console.error('Failed to reset counter:', error)
+      alert('Reset failed. Please try again.')
+    }
+  }
+
   function getFilteredImages() {
     let filtered = [...images]
 
@@ -180,7 +219,7 @@ export default function Gallery() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">📸 Gallery Dashboard</h1>
-              <p className="text-xs text-white/60">{images.length} total images | {selectedImages.length} selected</p>
+              <p className="text-xs text-white/60">{images.length} total images | {selectedImages.length} selected | 😊 {totalSmiles} total smiles</p>
             </div>
             <div className="flex gap-2">
               <a href="/" className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg transition text-sm">
@@ -272,6 +311,12 @@ export default function Gallery() {
                 className="px-4 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-semibold transition"
               >
                 🗑️ Delete ({selectedImages.length})
+              </button>
+              <button
+                onClick={resetCounter}
+                className="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-semibold transition flex items-center gap-2"
+              >
+                🔄 Reset Counter
               </button>
             </div>
           </div>

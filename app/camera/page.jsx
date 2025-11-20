@@ -96,14 +96,17 @@ export default function CameraInterface() {
     const video = videoRef.current
     
     try {
-      // stronger detection options for reliability (try larger inputSize)
-      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.45 })
+      // Optimized detection for better accuracy
+      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ 
+        inputSize: 416, 
+        scoreThreshold: 0.5 
+      })
 
       let detections = await faceapi
         .detectAllFaces(video, detectorOptions)
         .withFaceExpressions()
 
-      // Fallback: try single face detector if nothing found (sometimes more reliable)
+      // Fallback to single face detection for better reliability
       if ((!detections || detections.length === 0) && faceapi.detectSingleFace) {
         try {
           const single = await faceapi
@@ -119,45 +122,45 @@ export default function CameraInterface() {
 
       if (detections && detections.length > 0) {
         const expressions = detections[0]?.expressions || {}
-        const currentSmile = (expressions.happy ?? expressions.smile ?? 0) || 0
+        const currentSmile = (expressions.happy ?? 0) || 0
         setSmileScore(currentSmile)
         
-        // Track smile history for better detection
+        // Track smile history for smoother detection
         smileHistoryRef.current.push(currentSmile)
-        if (smileHistoryRef.current.length > 10) {
+        if (smileHistoryRef.current.length > 8) {
           smileHistoryRef.current.shift()
         }
         
-        // Calculate average smile over last few frames
+        // Calculate rolling average for stability
         const avgSmile = smileHistoryRef.current.reduce((a, b) => a + b, 0) / smileHistoryRef.current.length
         
-        // Track peak smile in current session
+        // Track peak smile
         if (currentSmile > peakSmileRef.current) {
           peakSmileRef.current = currentSmile
         }
         
-        // Count consecutive high smile frames (streak)
-        if (currentSmile >= 0.65) {
+        // Improved streak counting - more forgiving
+        if (currentSmile >= 0.60) {
           smileStreakRef.current = smileStreakRef.current + 1
           setSmileStreak(smileStreakRef.current)
         } else {
           smileStreakRef.current = 0
           setSmileStreak(0)
-          peakSmileRef.current = Math.max(peakSmileRef.current * 0.95, currentSmile) // Decay peak
+          peakSmileRef.current = Math.max(peakSmileRef.current * 0.95, currentSmile)
         }
         
-        // Update best smile indicator
+        // Update best smile
         if (currentSmile > bestSmileScore) {
           setBestSmileScore(currentSmile)
         }
         
-        // Only auto-capture if auto mode is enabled
+        // Auto-capture logic - capture at peak smile moment
         if (autoMode) {
           const now = Date.now()
           const timeSinceLastCapture = now - lastCaptureTimeRef.current
           
-          // More lenient capture: 2+ consecutive frames at 65%+ with 60%+ average
-          const sustainedSmile = smileStreakRef.current >= 2 && currentSmile >= 0.65 && avgSmile >= 0.60
+          // Trigger when: sustained smile for 3+ frames at 60%+ AND average is 55%+
+          const sustainedSmile = smileStreakRef.current >= 3 && currentSmile >= 0.60 && avgSmile >= 0.55
           
           if (timeSinceLastCapture > 3000 && !showPreview && countdown === 0) {
             if (sustainedSmile) {
@@ -175,7 +178,7 @@ export default function CameraInterface() {
         setSmileScore(0)
         smileStreakRef.current = 0
         setSmileStreak(0)
-        peakSmileRef.current = Math.max(peakSmileRef.current * 0.9, 0) // Decay when no face
+        peakSmileRef.current = Math.max(peakSmileRef.current * 0.9, 0)
       }
     } catch (err) {
       console.error('Detection error:', err)
@@ -201,22 +204,34 @@ export default function CameraInterface() {
     const canvas = canvasRef.current
     const video = videoRef.current
     
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
+    // Use actual video dimensions for best quality
+    const width = video.videoWidth || video.width || 1920
+    const height = video.videoHeight || video.height || 1080
     
-    // Mirror the image for selfie mode
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d', { alpha: false })
+    
+    // Better image quality settings
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    
+    // Mirror the image for selfie mode (horizontal flip)
     ctx.translate(canvas.width, 0)
     ctx.scale(-1, 1)
-    ctx.drawImage(video, 0, 0)
+    
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    
+    // Reset transform
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     
-    // Show preview
+    // Show preview with high quality
     const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
     setPreviewImage(dataUrl)
     setShowPreview(true)
     
-    // Upload
+    // Upload with high quality
     canvas.toBlob(async (blob) => {
       const formData = new FormData()
       formData.append('photo', blob, `smile-${Date.now()}.jpg`)
@@ -251,15 +266,23 @@ export default function CameraInterface() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          facingMode: 'user'
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          facingMode: 'user',
+          frameRate: { ideal: 30 },
+          aspectRatio: { ideal: 16/9 }
         } 
       })
       
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
+        
+        // Wait for video metadata to load for proper dimensions
+        await new Promise((resolve) => {
+          videoRef.current.onloadedmetadata = resolve
+        })
+        
         await videoRef.current.play()
       }
       
@@ -452,19 +475,24 @@ export default function CameraInterface() {
                       
                       {/* Status */}
                       <div className="pt-2 border-t border-white/10">
-                        {smileStreak >= 2 && (
-                          <div className="text-green-400 text-xs font-medium">
+                        {smileStreak >= 3 && (
+                          <div className="text-green-400 text-xs font-medium animate-pulse">
+                            Perfect! Capturing now... ({smileStreak})
+                          </div>
+                        )}
+                        {smileScore >= 0.60 && smileStreak >= 1 && smileStreak < 3 && (
+                          <div className="text-cyan-300 text-xs">
                             Hold that smile... ({smileStreak})
                           </div>
                         )}
-                        {smileScore >= 0.65 && smileStreak < 2 && (
-                          <div className="text-cyan-300 text-xs">
-                            Keep smiling...
+                        {smileScore >= 0.60 && smileStreak < 1 && (
+                          <div className="text-blue-300 text-xs">
+                            Great! Keep smiling
                           </div>
                         )}
-                        {smileScore < 0.65 && smileScore >= 0.40 && (
+                        {smileScore >= 0.40 && smileScore < 0.60 && (
                           <div className="text-blue-300 text-xs">
-                            Smile a bit more
+                            Almost there...
                           </div>
                         )}
                         {smileScore < 0.40 && (

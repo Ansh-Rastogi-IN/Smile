@@ -1,60 +1,10 @@
 {
   "gallery": [
     {
-      "id": "smile-1763547003725.jpg",
-      "url": "http://localhost:3001/images/smile-1763547003725.jpg",
-      "filename": "smile-1763547003725.jpg",
-      "timestamp": 1763547003737,
-      "camera": "Unknown",
-      "cameraLocation": null,
-      "uploaded": false,
-      "uploadedAt": null
-    },
-    {
-      "id": "smile-1763546983009.jpg",
-      "url": "http://localhost:3001/images/smile-1763546983009.jpg",
-      "filename": "smile-1763546983009.jpg",
-      "timestamp": 1763546983020,
-      "camera": "Unknown",
-      "cameraLocation": null,
-      "uploaded": false,
-      "uploadedAt": null
-    },
-    {
-      "id": "smile-1763546978230.jpg",
-      "url": "http://localhost:3001/images/smile-1763546978230.jpg",
-      "filename": "smile-1763546978230.jpg",
-      "timestamp": 1763546978240,
-      "camera": "Unknown",
-      "cameraLocation": null,
-      "uploaded": false,
-      "uploadedAt": null
-    },
-    {
-      "id": "smile-1763546972538.jpg",
-      "url": "http://localhost:3001/images/smile-1763546972538.jpg",
-      "filename": "smile-1763546972538.jpg",
-      "timestamp": 1763546972544,
-      "camera": "Unknown",
-      "cameraLocation": null,
-      "uploaded": false,
-      "uploadedAt": null
-    },
-    {
       "id": "smile-1763546946730.jpg",
       "url": "http://localhost:3001/images/smile-1763546946730.jpg",
       "filename": "smile-1763546946730.jpg",
       "timestamp": 1763546946824,
-      "camera": "Unknown",
-      "cameraLocation": null,
-      "uploaded": false,
-      "uploadedAt": null
-    },
-    {
-      "id": "smile-1763546927464.jpg",
-      "url": "http://localhost:3001/images/smile-1763546927464.jpg",
-      "filename": "smile-1763546927464.jpg",
-      "timestamp": 1763546927549,
       "camera": "Unknown",
       "cameraLocation": null,
       "uploaded": false,
